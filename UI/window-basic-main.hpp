@@ -31,6 +31,7 @@
 #include "window-basic-filters.hpp"
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
+#include "auth-base.hpp"
 
 #include <obs-frontend-internal.hpp>
 
@@ -106,6 +107,9 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSBasicStatusBar;
 	friend class OBSBasicSourceSelect;
 	friend class OBSBasicSettings;
+	friend class Auth;
+	friend class AutoConfig;
+	friend class AutoConfigStreamPage;
 	friend struct OBSStudioAPI;
 
 	enum class MoveDir {
@@ -126,9 +130,13 @@ class OBSBasic : public OBSMainWindow {
 private:
 	obs_frontend_callbacks *api = nullptr;
 
+	std::shared_ptr<Auth> auth;
+
 	std::vector<VolControl*> volumes;
 
 	std::vector<OBSSignal> signalHandlers;
+
+	QList<QPointer<QDockWidget>> extraDocks;
 
 	bool loaded = false;
 	long disableSaving = 1;
@@ -568,6 +576,8 @@ public:
 	void SaveService();
 	bool LoadService();
 
+	inline Auth *GetAuth() {return auth.get();}
+
 	inline void EnableOutputs(bool enable)
 	{
 		if (enable) {
@@ -594,6 +604,10 @@ public:
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreatePropertiesWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
+
+	QAction *AddDockWidgetMenu(QDockWidget *dock);
+
+	static OBSBasic *Get();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
@@ -762,6 +776,8 @@ public:
 
 	virtual int GetProfilePath(char *path, size_t size, const char *file)
 		const override;
+
+	static void InitBrowserPanelSafeBlock(bool showDialog);
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;

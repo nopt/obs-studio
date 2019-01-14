@@ -25,6 +25,10 @@
 #include "window-namedialog.hpp"
 #include "qt-wrappers.hpp"
 
+extern void DestroyPanelCookieManager();
+extern void DeletePanelCookies(const char *profile);
+extern void DuplicateCurrentCookieProfile(const std::string &newProfile);
+
 void EnumProfiles(std::function<bool (const char *, const char *)> &&cb)
 {
 	char path[512];
@@ -228,14 +232,23 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir.c_str());
 
+	Auth::Save();
+	if (create_new) {
+		auth.reset();
+		DestroyPanelCookieManager();
+	} else {
+		DuplicateCurrentCookieProfile(newName);
+	}
+
 	config_set_string(config, "General", "Name", newName.c_str());
 	config.SaveSafe("tmp");
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
 	RefreshProfiles();
 
-	if (create_new)
+	if (create_new) {
 		ResetProfileData();
+	}
 
 	blog(LOG_INFO, "Created profile '%s' (%s, %s)", newName.c_str(),
 			create_new ? "clean" : "duplicate", newDir.c_str());
@@ -446,6 +459,11 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir);
 
+	Auth::Save();
+	auth.reset();
+	DestroyPanelCookieManager();
+	DeletePanelCookies(oldName.c_str());
+
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
 	ResetProfileData();
@@ -458,6 +476,8 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	blog(LOG_INFO, "------------------------------------------------");
 
 	UpdateTitleBar();
+
+	Auth::Load();
 
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
@@ -603,12 +623,18 @@ void OBSBasic::ChangeProfile()
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			newDir);
 
+	Auth::Save();
+	auth.reset();
+	DestroyPanelCookieManager();
+
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
 	ResetProfileData();
 	RefreshProfiles();
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
+
+	Auth::Load();
 
 	CheckForSimpleModeX264Fallback();
 

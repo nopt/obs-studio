@@ -7,7 +7,7 @@ else()
 	set(FIND_MODE QUIET)
 endif()
 
-if(BROWSER_AVAILABLE_INTERNAL)
+if(BROWSER_AVAILABLE_INTERNAL AND WIN32)
 	add_definitions(-DBROWSER_AVAILABLE)
 endif()
 
@@ -105,6 +105,15 @@ elseif(UNIX)
                 Qt5::X11Extras)
 endif()
 
+if(BROWSER_AVAILABLE_INTERNAL)
+	list(APPEND obs_PLATFORM_SOURCES
+		auth-twitch.cpp
+		)
+	list(APPEND obs_PLATFORM_HEADERS
+		auth-twitch.hpp
+		)
+endif()
+
 set(obs_libffutil_SOURCES
 	../deps/libff/libff/ff-util.c
 	)
@@ -134,11 +143,13 @@ set(obs_SOURCES
 	window-basic-auto-config.cpp
 	window-basic-main-outputs.cpp
 	window-basic-source-select.cpp
+	window-basic-settings-stream.cpp
 	window-basic-auto-config-test.cpp
 	window-basic-main-scene-collections.cpp
 	window-basic-main-transitions.cpp
 	window-basic-main-dropfiles.cpp
 	window-basic-main-profiles.cpp
+	window-basic-main-browser.cpp
 	window-basic-status-bar.cpp
 	window-basic-adv-audio.cpp
 	window-basic-transform.cpp
@@ -148,6 +159,7 @@ set(obs_SOURCES
 	window-log-reply.cpp
 	window-projector.cpp
 	window-remux.cpp
+	auth-base.cpp
 	source-tree.cpp
 	properties-view.cpp
 	focus-list.cpp
@@ -196,6 +208,7 @@ set(obs_HEADERS
 	window-log-reply.hpp
 	window-projector.hpp
 	window-remux.hpp
+	auth-base.hpp
 	source-tree.hpp
 	properties-view.hpp
 	properties-view.moc.hpp
